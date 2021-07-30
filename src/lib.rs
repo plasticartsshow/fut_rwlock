@@ -1,12 +1,13 @@
 //! # fut_rwlock 
-//! A read-write-lock that returns a Future-wrapped lock. 
+//! `FutRwLock` is a read-write-lock that returns a Future-wrapped lock. 
+//! It is a wrapper around the `std` library synchronization primitive of the same name. 
 //! - The FutRwLock does not block the calling thread that requests a lock.
-//! - _Any_ call to read/write returns a Future that must be awaited even if it 
-//! resolves immediately. 
+//! - _Any_ call to [read]FutRwLock::read/[write](FutRwLock::write) returns a Future 
+//! that must be `await`ed even if it resolves immediately. 
 //! - To _attempt_ to acquire an Option-wrapped read or write lock synchronously/immediately
-//! use the try_read_now or try_write_now methods.
-//! - Suitable for use in single-threaded wasm.
-//! - It requires the `std` library.
+//! use the [try_read_now](FutRwLock::try_read_now) or [try_write_now](FutRwLock::try_write_now) methods.
+//! - It was made to be suitable for use in single-threaded wasm environments without running 
+//! into errors when the environment tries to block upon accessing a synchronization primitive.
 use futures::{
   future::{
     Future,
@@ -491,7 +492,7 @@ mod tests {
           ));
         }
         
-        let (futs, mut target) = specs.iter().fold(
+        let (futs, target) = specs.iter().fold(
           (vec![], vec![]),
           |(mut fs, mut ts), (ns, ind, val)| {
             fs.push(sleep_then_write_push(&p, *ns, *val));
@@ -499,14 +500,18 @@ mod tests {
             (fs, ts)
           }
         );
-        target.sort_by(|(i,_,_), (j,_,_)| i.partial_cmp(j).unwrap());
-        let target_vals : Vec<i8> = target.iter().map(|(_,_,v)| **v).collect();
-        let _ = join_all(futs).await;
+        // target.sort_by(|(i,_,_), (j,_,_)| i.partial_cmp(j).unwrap());
+        let target_vals : Vec<ValTy> = target.iter().map(|(_,_,v)| **v).collect();
+        let write_acquired_instants: Vec<Instant> = join_all(futs).await;
+        let mut targets_by_acquisition_instant: Vec<(Instant, ValTy)> = (0..TEST_DEPTH)
+          .map(|i| (write_acquired_instants[i], target_vals[i]) ).collect();
+        targets_by_acquisition_instant.sort_by(|(i,_), (j,_)| i.partial_cmp(j).unwrap());
+        let target_vals : Vec<ValTy> = targets_by_acquisition_instant.iter().map(|(_,v)| *v).collect();
         let result = p.read().await;
         assert_eq!(
           *result,
           target_vals,
-          "Result must be in the same order as the target according to specs: \n{:#?}",
+          "Write results in a buffer must match acquire order: \n{:#?}",
           specs
         )        
       }

@@ -8,7 +8,7 @@ description = "RwLock that always returns a Future on read and write."
 keywords = ["wasm32", "rwlock", "future", "synch", "mutex"]
 categories = ["data-structures", "wasm", "asynchronous"]
 license = "Apache-2.0"
-repository = "https://github.com/plasticartsshow/procout"
+repository = "https://github.com/plasticartsshow/fut_rwlock"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

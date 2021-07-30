@@ -25,6 +25,7 @@ jobs:
         run: cargo test --verbose
       - name: Install wasm-pack to run wasm tests
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Run wasm tests in headless browser
+      - name: Run wasm tests in headless chrome
         run: wasm-pack test --headless --chrome
+      - name: Run wasm tests in headless firefox
         run: wasm-pack test --headless --firefox

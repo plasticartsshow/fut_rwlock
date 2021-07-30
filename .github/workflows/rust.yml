@@ -53,21 +53,21 @@ jobs:
     steps:
       - uses: EndBug/add-and-commit@v7 # You can change this to use a specific version
         with:
-        # The arguments for the `git add` command (see the paragraph below for more info)
-        # Default: '.'
-        add: 'README.md'
-        # Name of the branch to use, if different from the one that triggered the workflow
-        # Default: the branch that triggered the run
-        branch: main
-        # Determines the way the action fills missing author name and email. Three options are available:
-        # - github_actor -> UserName <UserName@users.noreply.github.com>
-        # - user_info -> Your Display Name <your-actual@email.com>
-        # - github_actions -> github-actions <email associated with the github logo>
-        # Default: github_actor
-        default_author: github_actor
-       # The message for the commit
-        # Default: 'Commit from GitHub Actions (name of the workflow)'
-        message: 'Updated README.md'
-        # The flag used on the pull strategy. Use NO-PULL to avoid the action pulling at all.
-        # Default: '--no-rebase'
-        pull_strategy: 'NO-PULL or --no-rebase or --no-ff or --rebase'
+          # The arguments for the `git add` command (see the paragraph below for more info)
+          # Default: '.'
+          add: 'README.md'
+          # Name of the branch to use, if different from the one that triggered the workflow
+          # Default: the branch that triggered the run
+          branch: main
+          # Determines the way the action fills missing author name and email. Three options are available:
+          # - github_actor -> UserName <UserName@users.noreply.github.com>
+          # - user_info -> Your Display Name <your-actual@email.com>
+          # - github_actions -> github-actions <email associated with the github logo>
+          # Default: github_actor
+          default_author: github_actor
+         # The message for the commit
+          # Default: 'Commit from GitHub Actions (name of the workflow)'
+          message: 'Updated README.md'
+          # The flag used on the pull strategy. Use NO-PULL to avoid the action pulling at all.
+          # Default: '--no-rebase'
+          pull_strategy: 'NO-PULL or --no-rebase or --no-ff or --rebase'

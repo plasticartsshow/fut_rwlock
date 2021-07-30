@@ -10,6 +10,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  wasmpackinstall:
+    name: Install wasm-pack
+
+    steps:
+      - name: install
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: report
+        run: wasm-pack -v
+
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -21,13 +30,19 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build
         run: cargo build --verbose
-      - name: rusttest
+
+  test:
+    name: Test on ${{matrix.os}}
+    needs: wasmpackinstall
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+
+    steps:
+      - name: normalrusttest
         run: cargo test --verbose
-      - name: wasmpackinstall
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: headlesschrometest
-        needs: wasmpackinstall
         run: wasm-pack test --headless --chrome
       - name: headlessfirefoxtest
-        needs: wasmpackinstall
         run: wasm-pack test --headless --firefox

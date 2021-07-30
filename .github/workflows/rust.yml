@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - uses: EndBug/add-and-commit@v7 # You can change this to use a specific version
-      - with:
+        with:
         # The arguments for the `git add` command (see the paragraph below for more info)
         # Default: '.'
         add: 'README.md'

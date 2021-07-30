@@ -21,11 +21,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build
         run: cargo build --verbose
-      - name: Run tests in non-wasm rust
+      - name: rusttest
         run: cargo test --verbose
-      - name: Install wasm-pack to run wasm tests
+      - name: wasmpackinstall
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Run wasm tests in headless chrome
+      - name: headlesschrometest
+        needs: wasmpackinstall
         run: wasm-pack test --headless --chrome
-      - name: Run wasm tests in headless firefox
+      - name: headlessfirefoxtest
+        needs: wasmpackinstall
         run: wasm-pack test --headless --firefox

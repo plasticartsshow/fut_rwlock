@@ -477,10 +477,10 @@ mod tests {
           val: ValTy,
         ) -> Instant {
           sleep(ns).await;
+          let write_acquire_attempted_instant = Instant::now();
           let mut w = rwlock.write().await;
-          let write_acquired_instant = Instant::now();
           (*w).push(val.clone());
-          write_acquired_instant
+          write_acquire_attempted_instant
         }
         
         let mut specs: Vec<Spec> = Vec::with_capacity(TEST_DEPTH);
@@ -502,16 +502,16 @@ mod tests {
         );
         // target.sort_by(|(i,_,_), (j,_,_)| i.partial_cmp(j).unwrap());
         let target_vals : Vec<ValTy> = target.iter().map(|(_,_,v)| **v).collect();
-        let write_acquired_instants: Vec<Instant> = join_all(futs).await;
-        let mut targets_by_acquisition_instant: Vec<(Instant, ValTy)> = (0..TEST_DEPTH)
-          .map(|i| (write_acquired_instants[i], target_vals[i]) ).collect();
-        targets_by_acquisition_instant.sort_by(|(i,_), (j,_)| i.partial_cmp(j).unwrap());
-        let target_vals : Vec<ValTy> = targets_by_acquisition_instant.iter().map(|(_,v)| *v).collect();
+        let write_acquired_attempt_instants: Vec<Instant> = join_all(futs).await;
+        let mut targets_by_acquisition_attempt_instant: Vec<(Instant, ValTy)> = (0..TEST_DEPTH)
+          .map(|i| (write_acquired_attempt_instants[i], target_vals[i]) ).collect();
+        targets_by_acquisition_attempt_instant.sort_by(|(i,_), (j,_)| i.partial_cmp(j).unwrap());
+        let target_vals : Vec<ValTy> = targets_by_acquisition_attempt_instant.iter().map(|(_,v)| *v).collect();
         let result = p.read().await;
         assert_eq!(
           *result,
           target_vals,
-          "Write results in a buffer must match acquire order: \n{:#?}",
+          "Write results in a buffer must match acquire attempt order: \n{:#?}",
           specs
         )        
       }

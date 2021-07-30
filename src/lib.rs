@@ -458,7 +458,7 @@ mod tests {
       type FutrwTy = FutRwLock<TestTy>;
       
       const TEST_DEPTH:usize = 32;
-      const TEST_NS_STEP:TimeTy = 10;
+      const TEST_NS_STEP:TimeTy = 100;
       
       let p: FutrwTy = FutRwLock::new(Vec::with_capacity(TEST_DEPTH));
       {

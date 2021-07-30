@@ -10,15 +10,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  wasmpackinstall:
-    name: Install wasm-pack
-
-    steps:
-      - name: install
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: report
-        run: wasm-pack -v
-
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -33,7 +24,7 @@ jobs:
 
   test:
     name: Test on ${{matrix.os}}
-    needs: wasmpackinstall
+    needs: build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -42,7 +33,8 @@ jobs:
     steps:
       - name: normalrusttest
         run: cargo test --verbose
-      - name: headlesschrometest
+      - name: headlessbrowsertests
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        run: wasm-pack -v
         run: wasm-pack test --headless --chrome
-      - name: headlessfirefoxtest
         run: wasm-pack test --headless --firefox

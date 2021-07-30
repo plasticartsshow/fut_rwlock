@@ -37,6 +37,6 @@ jobs:
       - name: headlessbrowsertests
         run: |
           curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-          wasm-pack -v
+          # wasm-pack -v
           wasm-pack test --headless --chrome
           wasm-pack test --headless --firefox

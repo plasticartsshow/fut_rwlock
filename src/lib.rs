@@ -1,13 +1,15 @@
 //! # fut_rwlock 
-//! `FutRwLock` is a read-write-lock that returns a Future-wrapped lock. 
-//! It is a wrapper around the `std` library synchronization primitive of the same name. 
+//! `FutRwLock` returns a Future-wrapped locks to a read-write lock synchronization primitive.
+//! It is a wrapper around the std library synchronization primitive [std::sync::RwLock].
 //! - The FutRwLock does not block the calling thread that requests a lock.
-//! - _Any_ call to [read]FutRwLock::read/[write](FutRwLock::write) returns a Future 
-//! that must be `await`ed even if it resolves immediately. 
+//! - _Any_ call to [read]FutRwLock::read/[write](FutRwLock::write) returns an _asynchronous_ Future 
+//! that must be `await`ed even if it resolves immediately. If a lock isn't awaited, it does nothing.
 //! - To _attempt_ to acquire an Option-wrapped read or write lock synchronously/immediately
-//! use the [try_read_now](FutRwLock::try_read_now) or [try_write_now](FutRwLock::try_write_now) methods.
+//! use the [try_read_now](FutRwLock::try_read_now) or [try_write_now](FutRwLock::try_write_now). 
+//! _synchronous_ methods.
 //! - It was made to be suitable for use in single-threaded wasm environments without running 
 //! into errors when the environment tries to block upon accessing a synchronization primitive.
+//! - Locks are alloted to callers in request order. 
 use futures::{
   future::{
     Future,
@@ -88,7 +90,7 @@ impl <T: ?Sized + fmt::Debug> fmt::Debug for FutRwLock<T> {
 
 impl <T: ?Sized> FutRwLock<T> {
   /// Is the underlying RwLock poisoned?
-  pub async fn is_poisoned(&self) -> bool { 
+  pub fn is_poisoned(&self) -> bool { 
     self.inner.is_poisoned() 
   }
   
@@ -362,6 +364,9 @@ impl Future for WriterAwaitingReaderLocksFuture {
 }
 
 
+
+
+
 #[cfg(test)]
 mod tests {
   wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
@@ -375,6 +380,63 @@ mod tests {
     },
   };
   
+  use rand::{RngCore,SeedableRng};
+  use rand_chacha::ChaChaRng;
+  
+  use wasm_bindgen_test::*;
+  // #[cfg(not(feature = "wasm32"))]
+  // use std::time::{Instant, Duration};
+  use instant::{Instant, Duration};
+  
+  
+  // Test utility: Acquire some read locks and wait a while before dropping them.
+  // Return approximate time of lock acquisition.
+  async fn get_some_reads_then_wait(
+    rwlock: &FutRwLock<()>,
+    wait_ns: u64
+  ) -> Instant {
+    let _read_1 = rwlock.read().await;
+    let _read_2 = rwlock.read().await;
+    let reads_acquired_instant = Instant::now();
+    sleep(wait_ns).await;
+    reads_acquired_instant
+  }
+    
+  // Test utility: Acquire a write locks and wait a while before dropping it
+  // Return approximate time of lock acquisition.
+  async fn get_write_then_wait (
+    rwlock: &FutRwLock<()>,
+    wait_ns: u64,
+  ) -> Instant {
+    let _write_0 = rwlock.write().await;
+    let write_acquired_instant = Instant::now();
+    sleep(wait_ns).await;
+    write_acquired_instant
+  }
+  
+  // Test utility: Acquire a write lock.
+  // Return approximate time of lock acquisition.
+  async fn get_write (
+    rwlock: &FutRwLock<()>,
+  ) -> Instant {
+    let _write_0 = rwlock.write().await;
+    let write_acquired_instant = Instant::now();
+    write_acquired_instant
+  }
+  
+  // Test utility: Acquire some read locks.
+  // Return approximate time of lock acquisition.
+  async fn get_some_reads(
+    rwlock: &FutRwLock<()>,
+  ) -> Instant {
+    let _read_1 = rwlock.read().await;
+    let _read_2 = rwlock.read().await;
+    let reads_acquired_instant = Instant::now();
+  
+    reads_acquired_instant
+  }
+  
+  // Test utility: put a caller to sleep for a given time 
   async fn sleep(t: u64) {
     let msg: String = format!("{}", t as i32);
     if cfg!(target_arch = "wasm32") {
@@ -393,21 +455,20 @@ mod tests {
       std::println!("{}", msg );
     }  
   }
-  use rand::{RngCore,SeedableRng};
-  use rand_chacha::ChaChaRng;
   
-  use wasm_bindgen_test::*;
-  // #[cfg(not(feature = "wasm32"))]
-  // use std::time::{Instant, Duration};
-  use instant::{Instant, Duration};
-  
+  // run a test in the target-appropriate executor
   macro_rules! run_test {
     ($f:ident) => {
       {
-        #[cfg(target_arch = "wasm32")]
-        wasm_bindgen_futures::spawn_local($f());
-        #[cfg(not(target_arch = "wasm32"))]
-        tokio_test::block_on($f());
+        if !cfg!(target_arch = "wasm32") {
+          tokio_test::block_on($f())
+        } else {
+          wasm_bindgen_futures::spawn_local($f())
+        }
+        // #[cfg(target_arch = "wasm32")]
+        // wasm_bindgen_futures::spawn_local($f())
+        // #[cfg(not(target_arch = "wasm32"))]
+        // tokio_test::block_on($f())
       }
     };
   }
@@ -621,51 +682,32 @@ mod tests {
     run_test!(async_test)
   }
   
-  
-  // Test utility: Acquire some read locks and wait a while before dropping them.
-  // Return approximate time of lock acquisition.
-  async fn get_some_reads_then_wait(
-    rwlock: &FutRwLock<()>,
-    wait_ns: u64
-  ) -> Instant {
-    let _read_1 = rwlock.read().await;
-    let _read_2 = rwlock.read().await;
-    let reads_acquired_instant = Instant::now();
-    sleep(wait_ns).await;
-    reads_acquired_instant
-  }
-    
-  // Test utility: Acquire a write locks and wait a while before dropping it
-  // Return approximate time of lock acquisition.
-  async fn get_write_then_wait (
-    rwlock: &FutRwLock<()>,
-    wait_ns: u64,
-  ) -> Instant {
-    let _write_0 = rwlock.write().await;
-    let write_acquired_instant = Instant::now();
-    sleep(wait_ns).await;
-    write_acquired_instant
-  }
-  
-  // Test utility: Acquire a write lock.
-  // Return approximate time of lock acquisition.
-  async fn get_write (
-    rwlock: &FutRwLock<()>,
-  ) -> Instant {
-    let _write_0 = rwlock.write().await;
-    let write_acquired_instant = Instant::now();
-    write_acquired_instant
-  }
-  
-  // Test utility: Acquire some read locks.
-  // Return approximate time of lock acquisition.
-  async fn get_some_reads(
-    rwlock: &FutRwLock<()>,
-  ) -> Instant {
-    let _read_1 = rwlock.read().await;
-    let _read_2 = rwlock.read().await;
-    let reads_acquired_instant = Instant::now();
-    reads_acquired_instant
-  }
+  // #[test]
+  // #[wasm_bindgen_test]
+  // fn lock_propagates_poisoned_status () {
+  //   use std::panic::{self, AssertUnwindSafe};
+  // 
+  //   let async_test = || async {
+  //     type TestTy = FutRwLock<String>;
+  //     let rwlock: TestTy = String::from("parenchyma").into();
+  //     let mut write_lock = rwlock.write().await;
+  //     (*write_lock).push_str(&" stonecell");
+  //     drop(write_lock);
+  //     assert_eq!(rwlock.is_poisoned(), false, "RwLock starts life unpoisoned.");
+  //     panic::catch_unwind(AssertUnwindSafe( || async{
+  //       let _read_lock = rwlock.read().await;
+  //       panic!("Panics holding read lock");
+  //     }));
+  //     assert_eq!(rwlock.is_poisoned(), false, "RwLock remains unpoisoned following panic holding read.");
+  //     panic::catch_unwind(AssertUnwindSafe( || async{
+  //       let mut write_lock = rwlock.write().await;
+  //       (*write_lock).push_str(&" stonecell");
+  //       panic!("Panics holding read lock");
+  //     }));
+  //     std::println!("{}", *rwlock.read().await);
+  //     assert_eq!(rwlock.is_poisoned(), true, "RwLock is poisoned following panic holding write.");
+  //   };
+  //   run_test!(async_test);
+  // }
   
 }

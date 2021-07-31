@@ -457,18 +457,19 @@ mod tests {
   }
   
   // run a test in the target-appropriate executor
+  #[cfg(not(target_arch = "wasm32"))]
   macro_rules! run_test {
     ($f:ident) => {
       {
-        if !cfg!(target_arch = "wasm32") {
-          tokio_test::block_on($f())
-        } else {
-          wasm_bindgen_futures::spawn_local($f())
-        }
-        // #[cfg(target_arch = "wasm32")]
-        // wasm_bindgen_futures::spawn_local($f())
-        // #[cfg(not(target_arch = "wasm32"))]
-        // tokio_test::block_on($f())
+        tokio_test::block_on($f())
+      }
+    };
+  }
+  #[cfg(target_arch = "wasm32")]
+  macro_rules! run_test {
+    ($f:ident) => {
+      {
+        wasm_bindgen_futures::spawn_local($f())
       }
     };
   }

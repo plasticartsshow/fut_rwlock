@@ -1,4 +1,4 @@
-[![Workflow Status](https://github.com/plasticartsshow/fut_rwlock/workflows/main/badge.svg)](https://github.com/plasticartsshow/fut_rwlock/actions?query=workflow%3A%22main%22)
+[![Workflow Status](https://github.com/plasticartsshow/fut_rwlock/workflows/Rust/badge.svg)](https://github.com/plasticartsshow/fut_rwlock/actions?query=workflow%3A%22Rust%22)
 ![Maintenance](https://img.shields.io/badge/maintenance-experimental-blue.svg)
 
 # fut_rwlock

@@ -11,7 +11,7 @@ repository = "https://github.com/plasticartsshow/fut_rwlock"
 
 [badges]
 maintenance = { status = "experimental" }
-github = { repository = "plasticartsshow/fut_rwlock" }
+github = { repository = "plasticartsshow/fut_rwlock", workflow = "Rust" }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
